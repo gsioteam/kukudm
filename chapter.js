@@ -51,11 +51,12 @@ class ChapterCollection extends glib.Collection {
                 let link = doc2.querySelector('a');
                 let item = glib.DataItem.new();
                 item.picture = link.querySelector('img').getAttribute('src');
+                console.log('pic : ' + item.picture);
                 item.link = url;
                 url = purl.href(link.getAttribute('href'));
                 this.setDataAt(item, count);
                 count++;
-            }catch (e) {
+            } catch (e) {
                 break;
             }
         }

@@ -38,9 +38,11 @@ class ChapterCollection extends glib.Collection {
                     let href = purl.href(src);
                     if (!cache[href]) {
                         cache[href] = true;
-                        let script = await this.request(href, true);
-                        console.log(`eval(${script})`);
-                        ctx.eval(script);
+                        try {
+                            let script = await this.request(href, true);
+                            console.log(`eval(${script})`);
+                            ctx.eval(script);
+                        } catch (e) {}
                     }
                 }
             }

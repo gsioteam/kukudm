@@ -1,5 +1,6 @@
 {
     "name": "Kukudm",
+    "version": "v2",
     "icon": "https://wap.kukudm.com/images/head_logo.gif",
     "url": "https://wap.kukudm.com/",
     "index": "index.js",

@@ -1,45 +1,11 @@
 {
-    "name": "Kukudm",
-    "target": "v2",
-    "icon": "http://wap.ikukudm.com/images/head_logo.gif",
-    "url": "http://wap.ikukudm.com",
-    "index": "index.js",
-    "collections": [
-        "book.js",
-        "chapter.js"
-    ],
-    "search": {
-        "src": "search.js",
-        "data": {
-            "url": "http://so.ikukudm.com/m_search.asp?kw={0}&page={1}"
-        }
-    },
-    "categories": [
-        {
-            "title": "推薦",
-            "id": "home",
-            "url": "http://wap.ikukudm.com/",
-            "data": {}
-        },
-        {
-            "title": "日漫",
-            "id": "japan",
-            "url": "http://wap.ikukudm.com/comictype/3_{0}.htm"
-        },
-        {
-            "title": "港漫",
-            "id": "hongkong",
-            "url": "http://wap.ikukudm.com/comictype/5_{0}.htm"
-        },
-        {
-            "title": "国漫",
-            "id": "china",
-            "url": "http://wap.ikukudm.com/comictype/30_{0}.htm"
-        },
-        {
-            "title": "更多",
-            "id": "more",
-            "url": "http://wap.ikukudm.com/comictype/31_{0}.htm"
-        }
-    ]
+  "name": "DM5",
+  "icon": "icon.png",
+  "index": "index",
+  "appbar_elevation": 0,
+  "processor": "processor",
+  "extensions": [{
+    "icon": "search",
+    "index": "search"
+  }]
 }

@@ -1,101 +1,161 @@
 
-class Collection extends glib.Collection {
+const baseURL = 'http://so.ikukudm.com/m_search.asp?kw={0}&page={1}';
 
-    constructor(data) {
-        super();
-        this.url = data.url;
-    }
+class SearchController extends Controller {
 
-    fetch(url) {
-        return new Promise((resolve, reject)=>{
-            let req = glib.Request.new('GET', url);
-            this.callback = glib.Callback.fromFunction(function() {
-                if (req.getError()) {
-                    reject(glib.Error.new(302, "Request error " + req.getError()));
-                } else {
-                    let body = req.getResponseBody();
-                    if (body) {
-                        resolve(glib.GumboNode.parse(body, 'gbk'));
-                    } else {
-                        reject(glib.Error.new(301, "Response null body"));
-                    }
-                }
-            });
-            req.setOnComplete(this.callback);
-            req.start();
-        });
-    }
-
-}
-
-class SearchCollection extends Collection {
-    
-    constructor(data) {
-        super(data);
-        this.page = 0;
-    }
-
-    loadPage(url, func) {
-        let purl = new PageURL(url);
-        console.log("load " + url);
-        this.fetch(url).then((doc) => {
-            let results = [];
-            let boxes = doc.querySelectorAll('#classify_container > li');
-            console.log("loaded  " + boxes.length);
-            for (let box of boxes) {
-                let linkimg = box.querySelector('.ImgA');
-                let item = glib.DataItem.new();
-                item.link = purl.href(linkimg.getAttribute('href'));
-                item.picture = purl.href(linkimg.querySelector('img').getAttribute('src'));
-                
-                item.title = box.querySelector('.txtA').text;
-                item.subtitle = box.querySelector('.info').text;
-                results.push(item);
+    load() {
+        let str = localStorage['hints'];
+        let hints = [];
+        if (str) {
+            let json = JSON.parse(str);
+            if (json.push) {
+                hints = json;
             }
-            func(null, results);
-        }).catch(function(err) {
-            if (err instanceof Error) 
-                err = glib.Error.new(305, err.message);
-            func(err);
-        });
+        }
+        this.data = {
+            list: [],
+            focus: false,
+            hints: hints,
+            text: '',
+            loading: false,
+            hasMore: false,
+        };
     }
 
-    makeUrl(key, page) {
-        return this.url.replace("{0}", glib.Encoder.urlEncodeWithEncoding(this.key, 'gbk')).replace("{1}", page + 1);
+    makeURL(word, page) {
+        return baseURL.replace('{0}', encodeURIComponent(word)).replace('{1}', page + 1);
     }
 
-    reload(data, cb) {
-        this.key = data.get("key") || this.key;
-        let page = data.get("page") || 0;
-        if (!this.key) return false;
-        let url = this.makeUrl(this.key, page);
-        console.log(url);
-        this.loadPage(url, (err, data) => {
-            if (!err) {
-                this.setData(data);
-                this.page = page;
-            }
-            cb.apply(err);
-        });
-        return true;
+    onSearchClicked() {
+        this.findElement('input').submit();
     } 
 
-    loadMore(cb) {
-        let page = this.page + 1;
-        let url = this.makeUrl(this.key, page);
-        console.log("load more " + url);
-        this.loadPage(url, (err, data) => {
-            if (!err) {
-                this.appendData(data);
-                this.page = page;
+    onTextChange(text) {
+        this.data.text = text;
+    }
+
+    async onTextSubmit(text) {
+        let hints = this.data.hints;
+        if (text.length > 0) {
+            if (hints.indexOf(text) < 0) {
+                this.setState(()=>{
+                    hints.unshift(text);
+                    while (hints.length > 30) {
+                        hints.pop();
+                    }
+    
+                    localStorage['hints'] = JSON.stringify(hints);
+                });
             }
-            cb.apply(err);
+            
+            this.setState(()=>{
+                this.data.loading = true;
+            });
+            try {
+                let list = await this.request(this.makeURL(text, 0));
+                this.key = text;
+                this.page = 0;
+                this.setState(()=>{
+                    this.data.list = list;
+                    this.data.loading = false;
+                });
+            } catch(e) {
+                showToast(`${e}\n${e.stack}`);
+                this.setState(()=>{
+                    this.data.loading = false;
+                });
+            }
+        }
+    }
+
+    onTextFocus() {
+        this.setState(()=>{
+            this.data.focus = true;
         });
-        return true;
+    }
+
+    onTextBlur() {
+        this.setState(()=>{
+            this.data.focus = false;
+        });
+    }
+
+    async onPressed(index) {
+        await this.navigateTo('book', {
+            data: this.data.list[index]
+        });
+    }
+
+    onHintPressed(index) {
+        let hint = this.data.hints[index];
+        if (hint) {
+            this.setState(()=>{
+                this.data.text = hint;
+                this.findElement('input').blur();
+                this.onTextSubmit(hint);
+            });
+        }
+    }
+
+    async onRefresh() {
+        let text = this.key;
+        if (!text) return;
+        try {
+            let list = await this.request(this.makeURL(text, 0));
+            this.page = 0;
+            this.setState(()=>{
+                this.data.list = list;
+                this.data.loading = false;
+            });
+        } catch(e) {
+            showToast(`${e}\n${e.stack}`);
+            this.setState(()=>{
+                this.data.loading = false;
+            });
+        }
+    }
+
+    async onLoadMore() {
+        let page = this.page + 1;
+        try {
+            let list = await this.request(this.makeURL(this.key, page));
+            this.page = page;
+            this.setState(()=>{
+                for (let item of list) {
+                    this.data.list.push(item);
+                }
+                this.data.loading = false;
+            });
+        } catch(e) {
+            showToast(`${e}\n${e.stack}`);
+            this.setState(()=>{
+                this.data.loading = false;
+            });
+        }
+    }
+
+    async request(url) {
+        let res = await fetch(url);
+        let buffer = await res.arrayBuffer();
+        let decoder = new TextDecoder('gbk');
+        let text = decoder.decode(buffer);
+        
+        let doc = HTMLParser.parse(text);
+        
+        let items = [];
+
+        let list = doc.querySelectorAll('#classify_container > li');
+        for (let node of list) {
+            let linkimg = node.querySelector('.ImgA');
+            items.push({
+                title: node.querySelector('.txtA').text,
+                subtitle: node.querySelector('.info').text,
+                link: new URL(linkimg.getAttribute('href'), url).toString(),
+                picture: new URL(linkimg.querySelector('img').getAttribute('src'), url).toString(),
+            });
+        }
+        return items;
     }
 }
 
-module.exports = function(data) {
-    console.log(data.toObject());
-    return SearchCollection.new(data ? data.toObject() : {});
-};
+module.exports = SearchController;

@@ -43,6 +43,7 @@ class MangaProcesser extends Processor {
                 url,
                 count,
             });
+            console.log("Request " + url);
             let doc = await request(url);
             let tags = doc.querySelectorAll('script[src]');
             for (let tag of tags) {
@@ -59,6 +60,7 @@ class MangaProcesser extends Processor {
                 }
             }
             try {
+                console.log(`Doc ${doc}`);
                 let script = doc.querySelector('script:not([src])');
                 let html = env.eval(script.text);
                 let doc2 = HTMLParser.parse(html);
@@ -73,6 +75,7 @@ class MangaProcesser extends Processor {
                 this.setDataAt(item, count);
                 count++;
             } catch (e) {
+                console.log(`error ${e}\n${e.toString()}`);
                 throw e;
             }
         }

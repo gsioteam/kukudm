@@ -24,6 +24,9 @@ class MangaProcesser extends Processor {
         let cache = {};
         state = state ?? {};
         let url = state.url ?? this.data.link;
+        if (url.indexOf('exit/exit') > 0) {
+            url = null;
+        }
         let count = state.count ?? 0;
 
         async function request(url, isText)  {

@@ -16,7 +16,7 @@ function parseData(text, url) {
     return {
         subtitle: subtitle,
         summary: summary,
-        list: results,
+        list: results.reverse(),
     };
 }
 

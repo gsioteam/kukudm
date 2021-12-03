@@ -57,7 +57,9 @@ class MainController extends Controller {
                     'User-Agent': this.userAgent,
                 },
             });
-            let text = await res.text();
+            let buffer = await res.arrayBuffer();
+            let decoder = new TextDecoder('gbk');
+            let text = decoder.decode(buffer);
             this.page = page;
             let items = this.parseData(text, url);
     

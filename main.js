@@ -18,7 +18,7 @@ class MainController extends Controller {
         this.data = {
             list: list,
             loading: false,
-            hasMore: this.id !== 'update'
+            hasMore: this.id !== 'home'
         };
 
         this.userAgent = 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/85.0.4183.102 Mobile Safari/537.36';
@@ -68,7 +68,8 @@ class MainController extends Controller {
                     this.data.list.push(item);
                 }
                 this.data.loading = false;
-                this.data.hasMore = items.length >= PER_PAGE;
+                this.data.hasMore = this.id !== 'home' && items.length > 0;
+                console.log(`id: ${this.id} ${this.data.hasMore}`)
             });
         } catch (e) {
             showToast(`${e}\n${e.stack}`);
@@ -106,7 +107,7 @@ class MainController extends Controller {
             this.setState(()=>{
                 this.data.list = items;
                 this.data.loading = false;
-                this.data.hasMore = this.id !== 'update' && items.length >= PER_PAGE;
+                this.data.hasMore = this.id !== 'home' && items.length > 0;
             });
         } catch (e) {
             showToast(`${e}\n${e.stack}`);
